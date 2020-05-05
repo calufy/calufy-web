@@ -1,0 +1,72 @@
+<div *ngIf="!session" class="input-session">
+  <img class="logo" src="../../assets/logo.gif"/>
+  <mat-form-field floatLabel="never">
+    <input (keydown.enter)="checkSession(inputSession)" [(ngModel)]="inputSession" matInput placeholder="Session name">
+  </mat-form-field>
+  <button
+    (click)="checkSession(inputSession)"
+    class="input-session-button"
+    mat-stroked-button>
+    Enjoy
+    <mat-icon>favorite</mat-icon>
+  </button>
+</div>
+
+<mat-toolbar *ngIf="session">
+  <mat-toolbar-row>
+    https://www.youtube.com/watch?v=
+    <div class="input-id">
+      <mat-form-field>
+        <input (change)="updateVideoState()" [(ngModel)]="id" matInput>
+        <button (click)="id=''" *ngIf="id" aria-label="Clear" mat-button mat-icon-button matSuffix>
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-form-field>
+    </div>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div *ngIf="!id" class="no-video">
+  <mat-icon>offline_bolt</mat-icon>
+</div>
+<div *ngIf="session && id" class="player-wrapper">
+  <youtube-player
+    (ready)="savePlayer($event)"
+    (stateChange)="updateVideoState()"
+    [ngClass]="{'cinema': cinema}"
+    [videoId]="id"
+    class="player">
+  </youtube-player>
+  <div class="icons">
+    <button (click)="changePinDialog()" class="pin-button" mat-icon-button>
+      <mat-icon *ngIf="pin!==-1">lock</mat-icon>
+      <mat-icon *ngIf="pin===-1">lock_open</mat-icon>
+    </button>
+    <button (click)="donate.submit()" class="donate-button" mat-icon-button type="submit">
+      <mat-icon>favorite</mat-icon>
+    </button>
+    <button
+      (click)="toggleVideo()"
+      *ngIf="state"
+      class="play-pause-button"
+      color="primary"
+      mat-raised-button>
+      <span *ngIf="state!==1">Play</span>
+      <span *ngIf="state===1">Pause</span>
+    </button>
+    <button (click)="shareLink()" [cdkCopyToClipboard]="link"
+            [matTooltipDisabled]="disableShareTooltip"
+            mat-icon-button
+            matTooltip="Link copied to clipboard!" matTooltipClass="shareLinkTooltip"
+            matTooltipPosition="above">
+      <mat-icon>share</mat-icon>
+    </button>
+    <button (click)="toggleCinema()" class="cinema-button" mat-icon-button>
+      <mat-icon>tv</mat-icon>
+    </button>
+  </div>
+</div>
+
+<form #donate action="https://www.paypal.com/cgi-bin/webscr" method="post" style="display: none" target="_top">
+  <input name="cmd" type="hidden" value="_s-xclick"/>
+  <input name="hosted_button_id" type="hidden" value="88TA7W3XMQH94"/>
+</form>
