@@ -1,0 +1,199 @@
+app-player {
+  .mat-toolbar-row {
+    display: flex;
+    justify-content: center;
+    color: #fafafa;
+    background-color: #3698f4;
+    box-shadow: 0 2px 5px 0 rgba(0, 0, 0, .26);
+    font-weight: 400;
+    position: fixed;
+    font-size: 13px;
+
+    @media only screen and (min-width: 768px) {
+      font-size: 18px;
+    }
+
+    .input-id {
+      min-width: 118px;
+      max-width: 500px;
+      width: 60%;
+
+      mat-form-field {
+        width: 100%;
+      }
+    }
+  }
+
+  .play-pause-button {
+    margin-top: 50px;
+  }
+
+  @keyframes logo {
+    0% {
+      border-radius: 25%
+    }
+    25% {
+      border-radius: 50%
+    }
+    100% {
+      border-radius: 25%
+    }
+  }
+
+  .input-session {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 90vh;
+    flex-direction: column;
+
+    .logo {
+      opacity: 0.8;
+      border: 3px solid darkslategrey;
+      border-radius: 25%;
+      animation-name: logo;
+      animation-duration: 6s;
+      animation-delay: 2s;
+      animation-iteration-count: infinite;
+      animation-timing-function: ease-in-out;
+    }
+
+    mat-form-field {
+      margin-top: 25px;
+      width: 80%;
+      font-size: 28px;
+      text-align: center;
+
+      .mat-input-element {
+        color: white !important;
+        caret-color: white !important;
+      }
+
+      .mat-form-field-label {
+        color: #76c8c0 !important;
+        caret-color: white !important;
+      }
+
+      .mat-form-field-underline {
+        background-color: #76c8c0 !important;
+      }
+
+      .mat-form-field-ripple {
+        background-color: #76c8c0 !important;
+      }
+
+      @media only screen and (min-width: 768px) {
+        width: 420px;
+      }
+    }
+
+    .input-session-button {
+      font-size: 18px;
+      width: 40%;
+      color: #0b6c62;
+      border-color: #0b6c62;
+
+      .mat-icon {
+        font-size: 20px;
+        line-height: 22px;
+      }
+
+      @media only screen and (min-width: 768px) {
+        width: 180px;
+        margin-top: 30px;
+      }
+    }
+  }
+
+  .no-video {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 80vh;
+    color: #fff;
+
+    .mat-icon {
+      font-size: 56px;
+    }
+  }
+
+  .player-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 90vh;
+    flex-direction: column;
+    color: #fff;
+
+    .player {
+      display: flex;
+      justify-content: center;
+      height: 50vh;
+      width: 100%;
+      border: none;
+
+      @media only screen and (min-width: 768px) {
+        height: auto;
+        width: auto;
+        border: 1px solid whitesmoke;
+        border-radius: 12px;
+        padding: 22px;
+      }
+
+      &.cinema {
+        iframe, object, embed {
+          @media only screen and (min-width: 768px) {
+            height: 620px;
+            width: 1094px;
+          }
+        }
+      }
+    }
+
+    iframe, object, embed {
+      height: 100%;
+      width: 100%;
+      margin: auto;
+
+      @media only screen and (min-width: 768px) {
+        height: 390px;
+        width: 640px;
+      }
+    }
+
+    .icons {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      width: 60%;
+
+      .donate-button,
+      .cinema-button {
+        display: none;
+      }
+
+      @media only screen and (min-width: 768px) {
+        width: 400px;
+
+        .donate-button,
+        .cinema-button {
+          display: block;
+        }
+      }
+    }
+  }
+}
+
+.shareLinkTooltip {
+  background-color: rgba(27, 139, 127, 0.47);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.mat-snack-bar-container {
+  background: #32323285;
+}
+
