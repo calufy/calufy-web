@@ -262,6 +262,10 @@ export class PlayerComponent implements OnInit {
   toggleCinema() {
     this.cinema = !this.cinema;
   }
+
+  github() {
+    window.location.href = 'https://github.com/calufy/calufy-web';
+  }
 }
 
 
