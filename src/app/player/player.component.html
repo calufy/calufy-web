@@ -17,7 +17,7 @@
     https://www.youtube.com/watch?v=
     <div class="input-id">
       <mat-form-field>
-        <input (change)="updateVideoState()" [(ngModel)]="id" matInput>
+        <input (change)="setPlayerStatus()" [(ngModel)]="id" matInput>
         <button (click)="id=''" *ngIf="id" aria-label="Clear" mat-button mat-icon-button matSuffix>
           <mat-icon>close</mat-icon>
         </button>
@@ -31,7 +31,7 @@
 <div *ngIf="session && id" class="player-wrapper">
   <youtube-player
     (ready)="savePlayer($event)"
-    (stateChange)="updateVideoState()"
+    (stateChange)="setPlayerStatus()"
     [ngClass]="{'cinema': cinema}"
     [videoId]="id"
     class="player">

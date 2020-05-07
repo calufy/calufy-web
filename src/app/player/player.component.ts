@@ -63,22 +63,16 @@ export class PlayerComponent implements OnInit {
     });
   }
 
-  subscribe() {
-    this.gdpr.openFromComponent(GdprComponent, {
-      duration: 0,
-    });
-    const that = this;
-    this.db.database.ref('sessions/' + this.session + '_' + this.pin).on('value', (snap) => {
-      that.sharedVideoStateChanges(snap);
-    });
-  }
-
-  enterInSession(session) {
-    this.session = session;
-    this.subscribe();
-    this.link = 'https://calufy.com/' + this.session + '_' + this.pin;
-    this.location.go(this.session);
-    this.ref.detectChanges();
+  checkSession(session) {
+    if (session) {
+      this.db.database.ref('sessions/' + session + '_' + this.pin).once('value').then((snap) => {
+        if (snap.val()) {
+          this.enterInSession(session);
+        } else {
+          this.setNewSession();
+        }
+      });
+    }
   }
 
   setNewSession() {
@@ -95,21 +89,23 @@ export class PlayerComponent implements OnInit {
     });
   }
 
-  checkSession(session) {
-    if (session) {
-      this.db.database.ref('sessions/' + session + '_' + this.pin).once('value').then((snap) => {
-        if (snap.val()) {
-          this.enterInSession(session);
-        } else {
-          this.setNewSession();
-        }
-      });
-    }
+  enterInSession(session) {
+    this.session = session;
+    const that = this;
+    this.db.database.ref('sessions/' + this.session + '_' + this.pin).on('value', (snap) => {
+      that.sharedVideoStateChanges(snap);
+    });
+    this.gdpr.openFromComponent(GdprComponent, {
+      duration: 0,
+    });
+    this.link = 'https://calufy.com/' + this.session + '_' + this.pin;
+    this.location.go(this.session);
+    this.ref.detectChanges();
   }
+
 
   sharedVideoStateChanges(snapshot) {
     snapshot = snapshot.val();
-    console.log(snapshot);
     if (snapshot.id && snapshot.id !== this.id) {
       this.id = snapshot.id;
       this.ref.detectChanges();
@@ -117,40 +113,56 @@ export class PlayerComponent implements OnInit {
     if (snapshot.timestamp) {
       this.timestamp = snapshot.timestamp;
     }
+    if (snapshot.currentTime) {
+      this.currentTime = snapshot.currentTime;
+    }
     if (snapshot.user) {
       this.lastUser = snapshot.user;
     }
-    if (snapshot.pin) {
-      this.pin = snapshot.pin;
-    }
     if (this.user !== snapshot.user) {
-      if (snapshot.currentTime
-        && (!this.between(this.player.getCurrentTime(), snapshot.currentTime - 1, snapshot.currentTime + 1))) {
-        this.refreshing = true;
-        const difference = (Date.now() - this.timestamp) / 1000;
-        this.player.seekTo(snapshot.currentTime - difference);
-      }
-      if (snapshot.state && this.state !== snapshot.state) {
-        switch (snapshot.state) {
-          case 1:
-            this.refreshing = true;
-            this.player.playVideo();
-            break;
-          case 2:
-            this.refreshing = true;
-            this.player.pauseVideo();
-            break;
-          case 3:
-            break;
-          default:
-            break;
-        }
+      if (!this.player) {
+        let checkPlayer = setInterval(() => {
+          if (this.player) {
+            clearInterval(checkPlayer);
+            this.getPlayerStatus(snapshot);
+          }
+        }, 100);
+      } else {
+        this.getPlayerStatus(snapshot);
       }
     }
     this.ref.detectChanges();
   }
 
-  updateVideoState() {
+  getPlayerStatus(snapshot) {
+    if (!this.player.getCurrentTime()) {
+      this.refreshing = true;
+      this.player.seekTo(snapshot.currentTime);
+    }
+    if (this.player.getCurrentTime() && snapshot.currentTime && !this.between(this.player.getCurrentTime(), snapshot.currentTime - 1, snapshot.currentTime + 1)) {
+      this.refreshing = true;
+      const difference = (Date.now() - this.timestamp) / 1000;
+      this.player.seekTo(snapshot.currentTime - difference);
+    }
+    if (snapshot.state && this.state !== snapshot.state) {
+      switch (snapshot.state) {
+        case 1:
+          this.refreshing = true;
+          this.player.playVideo();
+          break;
+        case 2:
+          this.refreshing = true;
+          this.player.pauseVideo();
+          break;
+        case 3:
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  setPlayerStatus() {
     const currentState = this.player.getPlayerState();
     if (currentState === 1 || currentState === 2) {
       this.state = this.player.getPlayerState();
@@ -173,6 +185,12 @@ export class PlayerComponent implements OnInit {
       }, 500);
     }
   }
+
+  savePlayer(player) {
+    this.player = player.target;
+    this.player.hideVideoInfo();
+  }
+
 
   updatePin() {
     const oldSession = this.db.database.ref('sessions/' + this.session + '_' + this.oldPin);
@@ -227,21 +245,17 @@ export class PlayerComponent implements OnInit {
     });
   }
 
-  savePlayer(player) {
-    this.player = player.target;
-    this.player.hideVideoInfo();
-  }
 
   toggleVideo() {
     const state = this.player.getPlayerState();
     if (state !== 1) {
       this.player.playVideo();
       this.playing = true;
-      this.updateVideoState();
+      this.setPlayerStatus();
     } else {
       this.player.pauseVideo();
       this.playing = false;
-      this.updateVideoState();
+      this.setPlayerStatus();
     }
   }
 
