@@ -14,13 +14,32 @@
 
 <mat-toolbar *ngIf="session">
   <mat-toolbar-row>
-    https://www.youtube.com/watch?v=
     <div class="input-id">
       <mat-form-field>
-        <input (change)="setPlayerStatus()" [(ngModel)]="id" matInput>
-        <button (click)="id=''" *ngIf="id" aria-label="Clear" mat-button mat-icon-button matSuffix>
+        <input matInput
+               (blur)="checkInputEmpty()"
+               [matAutocomplete]="auto"
+               [formControl]="videoSearchCtrl">
+        <button (click)="videoSearchCtrl.setValue('')" *ngIf="videoSearchCtrl.value" aria-label="Clear" mat-button mat-icon-button matSuffix>
           <mat-icon>close</mat-icon>
         </button>
+        <mat-autocomplete #auto="matAutocomplete" class="search-panel">
+          <mat-option *ngFor="let video of filteredVideoSearch | async" [value]="video.title" title="{{video.channel}}" (click)="setId(video.id)" (keydown.enter)="setId(video.id)">
+            <div class="search-bar-img">
+              <img aria-hidden [src]="video.thumbnail">
+            </div>
+            <div class="search-bar-title">{{video.title}}</div>
+            <div class="search-bar-actions">
+              <button (click)="addToList($event, video)" mat-icon-button>
+                <mat-icon>playlist_add</mat-icon>
+              </button>
+              <button (click)="toggleVideo()" mat-icon-button>
+                <mat-icon *ngIf="id !== video.id || ( id === video.id && state !== 1 )">play_arrow</mat-icon>
+                <mat-icon *ngIf="id === video.id && state === 1">pause</mat-icon>
+              </button>
+            </div>
+          </mat-option>
+        </mat-autocomplete>
       </mat-form-field>
     </div>
   </mat-toolbar-row>
@@ -40,6 +59,9 @@
     <button (click)="changePinDialog()" class="pin-button" mat-icon-button>
       <mat-icon *ngIf="pin!==-1">lock</mat-icon>
       <mat-icon *ngIf="pin===-1">lock_open</mat-icon>
+    </button>
+    <button (click)="openList()" class="list-button" mat-icon-button>
+      <mat-icon>list</mat-icon>
     </button>
     <button (click)="donate.submit()" class="donate-button" mat-icon-button type="submit">
       <mat-icon>favorite</mat-icon>

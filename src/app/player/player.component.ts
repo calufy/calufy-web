@@ -7,6 +7,11 @@ import {Location} from '@angular/common';
 import {MatSnackBar} from '@angular/material/snack-bar';
 import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
 import {AngularFirestore} from '@angular/fire/firestore';
+import {NgxSpinnerService} from 'ngx-spinner';
+import {VideoSearch, YoutubeService} from '../youtube.service';
+import {debounceTime, switchMap} from 'rxjs/operators';
+import {FormControl} from '@angular/forms';
+import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from '@angular/material/bottom-sheet';
 
 export interface PinDialogData {
   pin: number;
@@ -20,7 +25,6 @@ export interface PinDialogData {
 })
 export class PlayerComponent implements OnInit {
   @ViewChild(MatTooltip) shareTooltip;
-  items: Observable<any[]>;
 
   public id = 'YRecSdDw7Y4';
   public session: string;
@@ -33,6 +37,10 @@ export class PlayerComponent implements OnInit {
   public cinema = false;
   public pin = -1;
   public oldPin = -1;
+  public specificId = false;
+  public videoSearchCtrl = new FormControl();
+  public filteredVideoSearch: Observable<VideoSearch[]>;
+  public watchLaterVideos: VideoSearch[] = [];
 
   private player;
   private playing = false;
@@ -47,7 +55,10 @@ export class PlayerComponent implements OnInit {
     private route: ActivatedRoute,
     private db: AngularFireDatabase,
     private cloudStore: AngularFirestore,
-    public dialog: MatDialog) {
+    public dialog: MatDialog,
+    private spinner: NgxSpinnerService,
+    private youTubeService: YoutubeService,
+    private bottomSheet: MatBottomSheet) {
   }
 
   ngOnInit() {
@@ -61,6 +72,13 @@ export class PlayerComponent implements OnInit {
         this.checkSession(this.inputSession);
       }
     });
+    this.filteredVideoSearch = this.videoSearchCtrl.valueChanges.pipe(
+      debounceTime(150),
+      switchMap((search: string) => {
+        return (search) ? this.youTubeService
+          .getVideosFromUrl(search) : [];
+      })
+    );
   }
 
   checkSession(session) {
@@ -76,15 +94,16 @@ export class PlayerComponent implements OnInit {
   }
 
   setNewSession() {
+    this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + this.id);
     this.db.database.ref('sessions/' + this.inputSession + '_' + this.pin).set({
       id: this.id,
       state: this.state,
       currentTime: this.currentTime,
       user: this.user,
       timestamp: Date.now()
-    }).then((snap) => {
+    }).then(() => {
       this.enterInSession(this.inputSession);
-    }).catch((snap) => {
+    }).catch(() => {
       this.enterPinDialog();
     });
   }
@@ -107,7 +126,7 @@ export class PlayerComponent implements OnInit {
   sharedVideoStateChanges(snapshot) {
     snapshot = snapshot.val();
     if (snapshot.id && snapshot.id !== this.id) {
-      this.id = snapshot.id;
+      this.setId(snapshot.id);
       this.ref.detectChanges();
     }
     if (snapshot.timestamp) {
@@ -121,7 +140,7 @@ export class PlayerComponent implements OnInit {
     }
     if (this.user !== snapshot.user) {
       if (!this.player) {
-        let checkPlayer = setInterval(() => {
+        const checkPlayer = setInterval(() => {
           if (this.player) {
             clearInterval(checkPlayer);
             this.getPlayerStatus(snapshot);
@@ -139,7 +158,9 @@ export class PlayerComponent implements OnInit {
       this.refreshing = true;
       this.player.seekTo(snapshot.currentTime);
     }
-    if (this.player.getCurrentTime() && snapshot.currentTime && !this.between(this.player.getCurrentTime(), snapshot.currentTime - 1, snapshot.currentTime + 1)) {
+    if (this.player.getCurrentTime() &&
+      snapshot.currentTime &&
+      !this.between(this.player.getCurrentTime(), snapshot.currentTime - 1, snapshot.currentTime + 1)) {
       this.refreshing = true;
       const difference = (Date.now() - this.timestamp) / 1000;
       this.player.seekTo(snapshot.currentTime - difference);
@@ -280,6 +301,36 @@ export class PlayerComponent implements OnInit {
   github() {
     window.location.href = 'https://github.com/calufy/calufy-web';
   }
+
+  setId(videoId: string) {
+    this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + videoId);
+    this.id = videoId;
+    this.ref.detectChanges();
+  }
+
+  checkInputEmpty() {
+    if (!this.videoSearchCtrl.value) {
+      this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + this.id);
+    }
+  }
+
+  addToList(event, video) {
+    event.stopPropagation();
+    this.watchLaterVideos.push(video);
+    this.openList();
+  }
+
+  openList() {
+    this.bottomSheet.open(WatchLaterComponent, {
+      data: {
+        watchLaterVideos: this.watchLaterVideos
+      }
+    }).afterDismissed().subscribe((video) => {
+      if (video) {
+        this.setId(video.id);
+      }
+    });
+  }
 }
 
 
@@ -392,5 +443,28 @@ export class GdprComponent {
 
   public dismiss() {
     this.gdpr.dismiss();
+  }
+}
+
+@Component({
+  selector: 'app-watch-later',
+  templateUrl: 'watch-later.html',
+  styles: [`
+      .empty-list {
+          text-align: center;
+      }
+
+      .watch-later-list-img {
+          height: 68px;
+      }
+  `],
+})
+export class WatchLaterComponent {
+  constructor(private bottomSheetRef: MatBottomSheetRef<WatchLaterComponent>, @Inject(MAT_BOTTOM_SHEET_DATA) public data: any) {
+  }
+
+  playVideo(event, video): void {
+    event.preventDefault();
+    this.bottomSheetRef.dismiss(video);
   }
 }

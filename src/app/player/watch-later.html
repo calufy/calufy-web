@@ -1,0 +1,11 @@
+<mat-nav-list>
+  <div *ngIf="data.watchLaterVideos.length < 1" class="empty-list">No videos in the watch later list</div>
+  <div *ngFor="let video of data.watchLaterVideos">
+    <a href="#" mat-list-item (click)="playVideo($event, video)">
+      <span mat-line>{{video.title}}</span>
+      <span mat-line>{{video.channel}}</span>
+      <img aria-hidden [src]="video.thumbnail" class="watch-later-list-img">
+    </a>
+  </div>
+</mat-nav-list>
+
