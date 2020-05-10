@@ -1,27 +1,53 @@
-# Calufy
+<p align="center">
+  <img src="images/calufy.png">
+</p>
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 9.1.3.
+<p align="center">
+  Watch videos together in real time.
+</p>
 
-## Development server
+<h2 align="center">Supporting Calufy</h2>
+<br>
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+The music connects us, for this reason Calufy has emerged. This platform allows you to share the music you want with the people you want. With Calufy you are able to listen to music in real time with your friends or family. You do not need to create an account. You only have to:
 
-## Code scaffolding
+-Enter and share your session with other people so they can see and listen to the same music that you are listening to.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## Technologies
 
-## Build
+Our stack
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+<a href="https://angular.io/" target="_blank">
+  <img src="images/angular.png" width="150px">
+</a>
+<a href="https://firebase.google.com/" target="_blank">
+  <img src="images/firebase.png" width="150px">
+</a>
 
-## Running unit tests
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+## Getting Started
 
-## Running end-to-end tests
+1. Install packages:
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+        $ npm install
 
-## Further help
+2. Run the app:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+        $ ng serve
+
+3. Go to `http://localhost:4200` and enjoy.
+
+
+### Want to report a bug or request a feature?
+
+Sure, make a pull request or send me an email. I'll be very grateful.
+
+
+## Code Status
+
+[![Build Status](https://badge.buildkite.com/ab1152b6a1f6a61d3ea4ec5b3eece8d4c2b830998459c75352.svg?branch=master)](https://buildkite.com/rails/rails)
+
+
+## License
+
+[MIT](LICENSE)
