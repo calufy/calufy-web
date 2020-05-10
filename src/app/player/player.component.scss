@@ -13,10 +13,24 @@ app-player {
       font-size: 18px;
     }
 
+    .topbar-specific {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .topbar-not-specific {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .input-id {
       min-width: 118px;
       max-width: 500px;
-      width: 60%;
+      width: 100%;
 
       mat-form-field {
         width: 100%;
@@ -168,17 +182,21 @@ app-player {
       display: flex;
       align-items: baseline;
       justify-content: space-between;
-      width: 60%;
+      width: 80%; // 60%;
 
-      .donate-button,
-      .cinema-button {
+      .donate-button {
         display: none;
+      }
+
+      .list-button,
+      .cinema-button {
+        display: block;
       }
 
       @media only screen and (min-width: 768px) {
         width: 400px;
 
-        .donate-button,
+        .list-button,
         .cinema-button {
           display: block;
         }
@@ -186,6 +204,7 @@ app-player {
     }
 
     .github-button {
+      display: none;
       position: absolute;
       bottom: 20px;
       right: 20px;
@@ -203,3 +222,52 @@ app-player {
   background: #32323285;
 }
 
+
+.mat-autocomplete-panel.search-panel {
+  top: 5px;
+  border-radius: 10px;
+
+  .mat-option {
+    padding: 0 5px 0 0 !important;
+    height: 68px !important;
+    border-radius: 5px;
+    margin: 6px;
+
+    .mat-option-text {
+      display: flex;
+      align-items: center;
+
+      .search-bar-img {
+        border-radius: 5px;
+        height: 68px;
+        display: flex;
+        align-items: center;
+
+        img {
+          height: 90px;
+        }
+      }
+
+      .search-bar-title {
+        width: 290px;
+        height: 68px;
+        overflow: hidden;
+        flex-wrap: wrap;
+        white-space: pre-wrap;
+        text-overflow: ellipsis;
+        padding-left: 11px;
+        line-height: 19px;
+        display: flex;
+        align-items: center;
+      }
+
+      .search-bar-actions {
+
+      }
+    }
+
+    .mat-icon {
+      margin: 0;
+    }
+  }
+}
