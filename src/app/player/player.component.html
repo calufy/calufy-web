@@ -17,6 +17,7 @@
     <div class="input-id">
       <mat-form-field>
         <input matInput
+               (click)="$event.target.select()"
                (blur)="checkInputEmpty()"
                [matAutocomplete]="auto"
                [formControl]="videoSearchCtrl">
@@ -60,7 +61,7 @@
       <mat-icon *ngIf="pin!==-1">lock</mat-icon>
       <mat-icon *ngIf="pin===-1">lock_open</mat-icon>
     </button>
-    <button (click)="openList()" class="list-button" mat-icon-button>
+    <button (click)="openList(0)" class="list-button" mat-icon-button>
       <mat-icon>list</mat-icon>
     </button>
     <button (click)="donate.submit()" class="donate-button" mat-icon-button type="submit">

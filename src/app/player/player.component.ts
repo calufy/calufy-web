@@ -24,29 +24,6 @@ export interface PinDialogData {
   encapsulation: ViewEncapsulation.None
 })
 export class PlayerComponent implements OnInit {
-  @ViewChild(MatTooltip) shareTooltip;
-
-  public id = 'YRecSdDw7Y4';
-  public session: string;
-  public user: string;
-  public lastUser: string;
-  public state = 2;
-  public inputSession: string;
-  public link: string;
-  public disableShareTooltip = true;
-  public cinema = false;
-  public pin = -1;
-  public oldPin = -1;
-  public specificId = false;
-  public videoSearchCtrl = new FormControl();
-  public filteredVideoSearch: Observable<VideoSearch[]>;
-  public watchLaterVideos: VideoSearch[] = [];
-
-  private player;
-  private playing = false;
-  private currentTime = 0;
-  private refreshing = false;
-  private timestamp;
 
   constructor(
     private gdpr: MatSnackBar,
@@ -60,6 +37,29 @@ export class PlayerComponent implements OnInit {
     private youTubeService: YoutubeService,
     private bottomSheet: MatBottomSheet) {
   }
+  @ViewChild(MatTooltip) shareTooltip;
+
+  public id = 'YRecSdDw7Y4';
+  public session: string;
+  public user: string;
+  public lastUser: string;
+  public state = 2; // 1 = playing | 2 = paused
+  public prevState = 2;
+  public inputSession: string;
+  public link: string;
+  public disableShareTooltip = true;
+  public cinema = false;
+  public pin = -1;
+  public oldPin = -1;
+  public videoSearchCtrl = new FormControl();
+  public filteredVideoSearch: Observable<VideoSearch[]>;
+  public watchLaterVideos: VideoSearch[] = [];
+
+  private player;
+  private playing = false;
+  private currentTime = 0;
+  private refreshing = false;
+  private timestamp;
 
   ngOnInit() {
     this.user = Math.random().toString(36).substring(2, 15);
@@ -185,25 +185,29 @@ export class PlayerComponent implements OnInit {
 
   setPlayerStatus() {
     const currentState = this.player.getPlayerState();
-    if (currentState === 1 || currentState === 2) {
-      this.state = this.player.getPlayerState();
-    }
-    this.currentTime = this.player.getCurrentTime();
-    const userRef = this.db.database.ref('sessions/' + this.session + '_' + this.pin);
-    if (!this.refreshing) {
-      userRef.update({
-        id: this.id,
-        state: this.state,
-        currentTime: this.currentTime,
-        user: this.user,
-        timestamp: Date.now()
-      }).then(() => {
-        this.refreshing = false;
-      }).catch();
+    if (currentState === 0 && this.watchLaterVideos.length > 0) {
+      this.nextVideo(this.watchLaterVideos.shift().id);
     } else {
-      setTimeout(() => {
-        this.refreshing = false;
-      }, 500);
+      if (currentState === 1 || currentState === 2) {
+        this.state = this.player.getPlayerState();
+      }
+      this.currentTime = this.player.getCurrentTime();
+      const userRef = this.db.database.ref('sessions/' + this.session + '_' + this.pin);
+      if (!this.refreshing) {
+        userRef.update({
+          id: this.id,
+          state: this.state,
+          currentTime: this.currentTime,
+          user: this.user,
+          timestamp: Date.now()
+        }).then(() => {
+          this.refreshing = false;
+        }).catch();
+      } else {
+        setTimeout(() => {
+          this.refreshing = false;
+        }, 500);
+      }
     }
   }
 
@@ -211,7 +215,6 @@ export class PlayerComponent implements OnInit {
     this.player = player.target;
     this.player.hideVideoInfo();
   }
-
 
   updatePin() {
     const oldSession = this.db.database.ref('sessions/' + this.session + '_' + this.oldPin);
@@ -303,9 +306,14 @@ export class PlayerComponent implements OnInit {
   }
 
   setId(videoId: string) {
-    this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + videoId);
     this.id = videoId;
+    this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + videoId);
     this.ref.detectChanges();
+  }
+
+  nextVideo(videoId: string) {
+    this.setId(videoId);
+    this.player.playVideo();
   }
 
   checkInputEmpty() {
@@ -317,17 +325,29 @@ export class PlayerComponent implements OnInit {
   addToList(event, video) {
     event.stopPropagation();
     this.watchLaterVideos.push(video);
-    this.openList();
+    this.openList(1000);
   }
 
-  openList() {
+  openList(duration) {
     this.bottomSheet.open(WatchLaterComponent, {
       data: {
-        watchLaterVideos: this.watchLaterVideos
+        watchLaterVideos: this.watchLaterVideos,
+        duration
       }
-    }).afterDismissed().subscribe((video) => {
-      if (video) {
-        this.setId(video.id);
+    }).afterDismissed().subscribe((response) => {
+      if (response) {
+        switch (response.action) {
+          case 'remove':
+            this.watchLaterVideos = this.watchLaterVideos.filter(watchLaterVideo => watchLaterVideo !== response.video);
+            this.openList(0);
+            break;
+          case 'play':
+            this.setId(response.video.id);
+            break;
+          case 'autoDismiss':
+          case 'default':
+            break;
+        }
       }
     });
   }
@@ -454,17 +474,50 @@ export class GdprComponent {
           text-align: center;
       }
 
+      .watch-later-list:not(:last-child) {
+          border-bottom: 1px solid rgba(0, 0, 0, .08);
+      }
+
       .watch-later-list-img {
+          order: -1;
+          margin-right: 20px;
           height: 68px;
+      }
+
+      .remove-button {
+          color: #96969661;
       }
   `],
 })
-export class WatchLaterComponent {
+export class WatchLaterComponent implements OnInit {
   constructor(private bottomSheetRef: MatBottomSheetRef<WatchLaterComponent>, @Inject(MAT_BOTTOM_SHEET_DATA) public data: any) {
   }
 
   playVideo(event, video): void {
     event.preventDefault();
-    this.bottomSheetRef.dismiss(video);
+    this.bottomSheetRef.dismiss({
+      action: 'play',
+      video
+    });
+  }
+
+  removeVideo(event, video): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.bottomSheetRef.dismiss({
+      action: 'remove',
+      video
+    });
+  }
+
+  ngOnInit(): void {
+    if (this.data.duration !== 0) {
+      setTimeout(() => {
+        this.bottomSheetRef.dismiss({
+          action: 'autoDismiss',
+          video: null
+        });
+      }, this.data.duration);
+    }
   }
 }

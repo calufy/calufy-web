@@ -63,6 +63,7 @@ app-player {
     flex-direction: column;
 
     .logo {
+      max-width: 60%;
       opacity: 0.8;
       border: 3px solid darkslategrey;
       border-radius: 25%;
