@@ -1,0 +1,18 @@
+app-enter-pin {
+  .mat-dialog-content {
+    text-align: center;
+  }
+
+  .mat-dialog-actions {
+    justify-content: space-around;
+  }
+
+  .mat-button {
+    font-weight: 400;
+  }
+
+  .enter-button:focus {
+    color: white !important;
+    background: #4ed580;
+  }
+}

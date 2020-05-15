@@ -10,7 +10,7 @@ import {MatInputModule} from '@angular/material/input';
 import {MatToolbarModule} from '@angular/material/toolbar';
 import {MatIconModule} from '@angular/material/icon';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {EnterPinComponent, GdprComponent, PinComponent, PlayerComponent, WatchLaterComponent} from './player/player.component';
+import {PlayerComponent} from './player/player.component';
 import {AngularFireModule} from '@angular/fire';
 import {AngularFireDatabaseModule} from '@angular/fire/database';
 import {environment} from '../environments/environment';
@@ -24,6 +24,10 @@ import {NgxPincodeModule} from 'ngx-pincode';
 import {HttpClientModule} from '@angular/common/http';
 import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
+import {EnterPinComponent} from './enter-pin/enter-pin.component';
+import {PinComponent} from './pin/pin.component';
+import {GdprComponent} from './gdpr/gdpr.component';
+import {WatchLaterComponent} from './watch-later/watch-later.component';
 
 @NgModule({
   declarations: [
