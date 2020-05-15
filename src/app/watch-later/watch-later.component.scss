@@ -1,0 +1,19 @@
+app-watch-later {
+  .empty-list {
+    text-align: center;
+  }
+
+  .watch-later-list:not(:last-child) {
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+  }
+
+  .watch-later-list-img {
+    order: -1;
+    margin-right: 20px;
+    height: 68px;
+  }
+
+  .remove-button {
+    color: #96969661;
+  }
+}

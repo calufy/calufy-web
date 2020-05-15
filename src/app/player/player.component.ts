@@ -1,17 +1,21 @@
-import {ChangeDetectorRef, Component, Inject, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectorRef, Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {AngularFireDatabase} from '@angular/fire/database';
 import {Observable} from 'rxjs';
 import {MatTooltip} from '@angular/material/tooltip';
 import {Location} from '@angular/common';
 import {MatSnackBar} from '@angular/material/snack-bar';
-import {MAT_DIALOG_DATA, MatDialog} from '@angular/material/dialog';
+import {MatDialog} from '@angular/material/dialog';
 import {AngularFirestore} from '@angular/fire/firestore';
 import {NgxSpinnerService} from 'ngx-spinner';
 import {VideoSearch, YoutubeService} from '../youtube.service';
 import {debounceTime, switchMap} from 'rxjs/operators';
 import {FormControl} from '@angular/forms';
-import {MAT_BOTTOM_SHEET_DATA, MatBottomSheet, MatBottomSheetRef} from '@angular/material/bottom-sheet';
+import {MatBottomSheet} from '@angular/material/bottom-sheet';
+import {EnterPinComponent} from '../enter-pin/enter-pin.component';
+import {PinComponent} from '../pin/pin.component';
+import {WatchLaterComponent} from '../watch-later/watch-later.component';
+import {GdprComponent} from '../gdpr/gdpr.component';
 
 export interface PinDialogData {
   pin: number;
@@ -25,6 +29,27 @@ export interface PinDialogData {
 })
 export class PlayerComponent implements OnInit {
 
+  @ViewChild(MatTooltip) shareTooltip;
+  public id = 'YRecSdDw7Y4';
+  public session: string;
+  public user: string;
+  public lastUser: string;
+  public state = 2; // 1 = playing | 2 = paused
+  public inputSession: string;
+  public link: string;
+  public disableShareTooltip = true;
+  public cinema = false;
+  public pin = -1;
+  public oldPin = -1;
+  public videoSearchCtrl = new FormControl();
+  public filteredVideoSearch: Observable<VideoSearch[]>;
+  public watchLaterVideos: VideoSearch[] = [];
+  private player;
+  private playing = false;
+  private currentTime = 0;
+  private refreshing = false;
+  private timestamp;
+
   constructor(
     private gdpr: MatSnackBar,
     private location: Location,
@@ -37,29 +62,6 @@ export class PlayerComponent implements OnInit {
     private youTubeService: YoutubeService,
     private bottomSheet: MatBottomSheet) {
   }
-  @ViewChild(MatTooltip) shareTooltip;
-
-  public id = 'YRecSdDw7Y4';
-  public session: string;
-  public user: string;
-  public lastUser: string;
-  public state = 2; // 1 = playing | 2 = paused
-  public prevState = 2;
-  public inputSession: string;
-  public link: string;
-  public disableShareTooltip = true;
-  public cinema = false;
-  public pin = -1;
-  public oldPin = -1;
-  public videoSearchCtrl = new FormControl();
-  public filteredVideoSearch: Observable<VideoSearch[]>;
-  public watchLaterVideos: VideoSearch[] = [];
-
-  private player;
-  private playing = false;
-  private currentTime = 0;
-  private refreshing = false;
-  private timestamp;
 
   ngOnInit() {
     this.user = Math.random().toString(36).substring(2, 15);
@@ -353,171 +355,3 @@ export class PlayerComponent implements OnInit {
   }
 }
 
-
-@Component({
-  selector: 'app-enter-pin',
-  templateUrl: 'enter-pin.html',
-  styles: [`
-      .mat-dialog-content {
-          text-align: center;
-      }
-
-      .mat-dialog-actions {
-          justify-content: space-around;
-      }
-
-      .mat-button {
-          font-weight: 400;
-      }
-
-      .enter-button:focus {
-          color: white !important;
-          background: #4ed580;
-      }
-  `],
-})
-export class EnterPinComponent {
-  @ViewChild('enterButton', {static: true}) enterButton;
-  public pinCompleted = false;
-
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: PinDialogData) {
-  }
-
-  public pincodeCompleted(pin) {
-    // tslint:disable-next-line:no-shadowed-variable
-    if (pin => 0 && pin <= 9999) {
-      this.data.pin = pin;
-      this.pinCompleted = true;
-      this.enterButton.focus();
-    }
-  }
-}
-
-@Component({
-  selector: 'app-pin',
-  templateUrl: 'pin.html',
-  styles: [`
-      .mat-dialog-content {
-          text-align: center;
-      }
-
-      .mat-dialog-actions {
-          justify-content: space-around;
-      }
-
-      .mat-button {
-          font-weight: 400;
-      }
-
-      .change-button:focus {
-          color: white !important;
-          background: #4ed580;
-      }
-  `],
-})
-export class PinComponent {
-  @ViewChild('changeButton', {static: true}) changeButton;
-  public pinCompleted = false;
-
-  constructor(
-    @Inject(MAT_DIALOG_DATA) public data: PinDialogData) {
-  }
-
-  public pincodeCompleted(pin) {
-    // tslint:disable-next-line:no-shadowed-variable
-    if (pin => 0 && pin <= 9999) {
-      this.data.pin = pin;
-      this.pinCompleted = true;
-      this.changeButton.focus();
-    }
-  }
-}
-
-@Component({
-  selector: 'app-gdpr',
-  templateUrl: 'gdpr.html',
-  styles: [`
-      .gdpr {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          height: 19px;
-          line-height: 20px;
-          opacity: 1;
-      }
-
-      a {
-          color: #53ad82;
-          text-decoration: none;
-      }
-
-      button {
-          margin-right: -10px;
-      }
-  `],
-})
-export class GdprComponent {
-  constructor(private gdpr: MatSnackBar) {
-  }
-
-  public dismiss() {
-    this.gdpr.dismiss();
-  }
-}
-
-@Component({
-  selector: 'app-watch-later',
-  templateUrl: 'watch-later.html',
-  styles: [`
-      .empty-list {
-          text-align: center;
-      }
-
-      .watch-later-list:not(:last-child) {
-          border-bottom: 1px solid rgba(0, 0, 0, .08);
-      }
-
-      .watch-later-list-img {
-          order: -1;
-          margin-right: 20px;
-          height: 68px;
-      }
-
-      .remove-button {
-          color: #96969661;
-      }
-  `],
-})
-export class WatchLaterComponent implements OnInit {
-  constructor(private bottomSheetRef: MatBottomSheetRef<WatchLaterComponent>, @Inject(MAT_BOTTOM_SHEET_DATA) public data: any) {
-  }
-
-  playVideo(event, video): void {
-    event.preventDefault();
-    this.bottomSheetRef.dismiss({
-      action: 'play',
-      video
-    });
-  }
-
-  removeVideo(event, video): void {
-    event.preventDefault();
-    event.stopPropagation();
-    this.bottomSheetRef.dismiss({
-      action: 'remove',
-      video
-    });
-  }
-
-  ngOnInit(): void {
-    if (this.data.duration !== 0) {
-      setTimeout(() => {
-        this.bottomSheetRef.dismiss({
-          action: 'autoDismiss',
-          video: null
-        });
-      }, this.data.duration);
-    }
-  }
-}

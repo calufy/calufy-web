@@ -1,0 +1,19 @@
+app-gdpr {
+  .gdpr {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 19px;
+    line-height: 20px;
+    opacity: 1;
+  }
+
+  a {
+    color: #53ad82;
+    text-decoration: none;
+  }
+
+  button {
+    margin-right: -10px;
+  }
+}
