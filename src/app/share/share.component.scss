@@ -1,0 +1,39 @@
+app-share {
+  .mat-dialog-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0;
+    padding: 14px 24px;
+  }
+
+  .session-code-wrapper {
+    padding: 24px;
+
+    .session-code {
+      color: #53ad82;
+      text-align: center;
+    }
+  }
+
+  .link-wrapper {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 24px;
+
+    .link {
+      color: black;
+      text-decoration: none;
+    }
+
+    .copy-button {
+      margin-left: 24px;
+    }
+  }
+}
+
+.mat-dialog-container {
+  padding: 0;
+}

@@ -1,4 +1,4 @@
-import {ChangeDetectorRef, Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit, ViewChild, ViewEncapsulation} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
 import {AngularFireDatabase} from '@angular/fire/database';
 import {Observable} from 'rxjs';
@@ -12,35 +12,34 @@ import {VideoSearch, YoutubeService} from '../youtube.service';
 import {debounceTime, switchMap} from 'rxjs/operators';
 import {FormControl} from '@angular/forms';
 import {MatBottomSheet} from '@angular/material/bottom-sheet';
-import {EnterPinComponent} from '../enter-pin/enter-pin.component';
-import {PinComponent} from '../pin/pin.component';
 import {WatchLaterComponent} from '../watch-later/watch-later.component';
 import {GdprComponent} from '../gdpr/gdpr.component';
-
-export interface PinDialogData {
-  pin: number;
-}
+import {SessionService} from '../session.service';
+import {ShareComponent} from '../share/share.component';
+import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
 
 @Component({
   selector: 'app-player',
   templateUrl: './player.component.html',
   styleUrls: ['./player.component.scss'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.Default
 })
 export class PlayerComponent implements OnInit {
 
   @ViewChild(MatTooltip) shareTooltip;
-  public id = 'YRecSdDw7Y4';
+  @ViewChild(MatAutocompleteTrigger) trigger;
+
+  public id;
   public session: string;
   public user: string;
   public lastUser: string;
   public state = 2; // 1 = playing | 2 = paused
-  public inputSession: string;
+  public hideVideo = false;
+
+  public loading;
   public link: string;
-  public disableShareTooltip = true;
   public cinema = false;
-  public pin = -1;
-  public oldPin = -1;
   public videoSearchCtrl = new FormControl();
   public filteredVideoSearch: Observable<VideoSearch[]>;
   public watchLaterVideos: VideoSearch[] = [];
@@ -60,18 +59,20 @@ export class PlayerComponent implements OnInit {
     public dialog: MatDialog,
     private spinner: NgxSpinnerService,
     private youTubeService: YoutubeService,
-    private bottomSheet: MatBottomSheet) {
+    private bottomSheet: MatBottomSheet,
+    private sessionService: SessionService) {
   }
 
   ngOnInit() {
-    this.user = Math.random().toString(36).substring(2, 15);
+    this.loading = true;
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
     document.body.appendChild(tag);
+    this.user = this.sessionService.getUser();
     this.route.paramMap.subscribe(params => {
       if (params && params.get('session')) {
-        this.inputSession = params.get('session');
-        this.checkSession(this.inputSession);
+        this.session = params.get('session');
+        this.enterInSession(this.session);
       }
     });
     this.filteredVideoSearch = this.videoSearchCtrl.valueChanges.pipe(
@@ -81,54 +82,26 @@ export class PlayerComponent implements OnInit {
           .getVideosFromUrl(search) : [];
       })
     );
-  }
-
-  checkSession(session) {
-    if (session) {
-      this.db.database.ref('sessions/' + session + '_' + this.pin).once('value').then((snap) => {
-        if (snap.val()) {
-          this.enterInSession(session);
-        } else {
-          this.setNewSession();
-        }
-      });
-    }
-  }
-
-  setNewSession() {
-    this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + this.id);
-    this.db.database.ref('sessions/' + this.inputSession + '_' + this.pin).set({
-      id: this.id,
-      state: this.state,
-      currentTime: this.currentTime,
-      user: this.user,
-      timestamp: Date.now()
-    }).then(() => {
-      this.enterInSession(this.inputSession);
-    }).catch(() => {
-      this.enterPinDialog();
-    });
+    this.ref.detectChanges();
   }
 
   enterInSession(session) {
-    this.session = session;
     const that = this;
-    this.db.database.ref('sessions/' + this.session + '_' + this.pin).on('value', (snap) => {
+    this.db.database.ref('sessions/' + session).on('value', (snap) => {
       that.sharedVideoStateChanges(snap);
     });
     this.gdpr.openFromComponent(GdprComponent, {
       duration: 0,
     });
-    this.link = 'https://calufy.com/' + this.session + '_' + this.pin;
-    this.location.go(this.session);
+    this.link = 'https://calufy.com/' + session;
     this.ref.detectChanges();
   }
-
 
   sharedVideoStateChanges(snapshot) {
     snapshot = snapshot.val();
     if (snapshot.id && snapshot.id !== this.id) {
       this.setId(snapshot.id);
+      this.loading = false;
       this.ref.detectChanges();
     }
     if (snapshot.timestamp) {
@@ -194,7 +167,7 @@ export class PlayerComponent implements OnInit {
         this.state = this.player.getPlayerState();
       }
       this.currentTime = this.player.getCurrentTime();
-      const userRef = this.db.database.ref('sessions/' + this.session + '_' + this.pin);
+      const userRef = this.db.database.ref('sessions/' + this.session);
       if (!this.refreshing) {
         userRef.update({
           id: this.id,
@@ -218,60 +191,6 @@ export class PlayerComponent implements OnInit {
     this.player.hideVideoInfo();
   }
 
-  updatePin() {
-    const oldSession = this.db.database.ref('sessions/' + this.session + '_' + this.oldPin);
-    this.db.database.ref('sessions/' + this.session + '_' + this.pin).set({
-      id: this.id,
-      state: this.state,
-      currentTime: this.currentTime,
-      user: this.user,
-      timestamp: Date.now()
-    }).then((snap) => {
-      oldSession.remove().then(() => {
-        this.enterInSession(this.session);
-      });
-    }).catch((error) => {
-      console.log('error =)', error);
-    });
-  }
-
-  enterPinDialog(): void {
-    const dialogRef = this.dialog.open(EnterPinComponent, {
-      width: '250px',
-      data: {}
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
-      // tslint:disable-next-line:radix
-      result = parseInt(result);
-      if (result && result !== this.pin) {
-        this.db.database.ref('sessions/' + this.inputSession + '_' + this.pin).once('value').then(() => {
-          this.pin = result;
-          this.enterInSession(this.inputSession);
-        }).catch(() => {
-          this.enterPinDialog();
-        });
-      }
-    });
-  }
-
-  changePinDialog(): void {
-    const dialogRef = this.dialog.open(PinComponent, {
-      width: '250px',
-      data: {pin: this.pin}
-    });
-    dialogRef.afterClosed().subscribe(result => {
-      // tslint:disable-next-line:radix
-      result = parseInt(result);
-      if (result && result !== this.pin) {
-        this.oldPin = this.pin;
-        this.pin = result;
-        this.updatePin();
-      }
-    });
-  }
-
-
   toggleVideo() {
     const state = this.player.getPlayerState();
     if (state !== 1) {
@@ -290,17 +209,16 @@ export class PlayerComponent implements OnInit {
   }
 
   shareLink() {
-    this.disableShareTooltip = false;
-    this.ref.detectChanges();
-    this.shareTooltip.show();
-    setTimeout(() => {
-      this.shareTooltip.hide();
-      this.disableShareTooltip = true;
-    }, 2000);
+    this.dialog.open(ShareComponent, {
+      data: {
+        code: this.session
+      }
+    });
   }
 
   toggleCinema() {
     this.cinema = !this.cinema;
+    this.ref.detectChanges();
   }
 
   github() {
@@ -326,6 +244,7 @@ export class PlayerComponent implements OnInit {
 
   addToList(event, video) {
     event.stopPropagation();
+    this.trigger.closePanel();
     this.watchLaterVideos.push(video);
     this.openList(1000);
   }
@@ -345,6 +264,9 @@ export class PlayerComponent implements OnInit {
             break;
           case 'play':
             this.setId(response.video.id);
+            break;
+          case 'add':
+            this.trigger.openPanel();
             break;
           case 'autoDismiss':
           case 'default':

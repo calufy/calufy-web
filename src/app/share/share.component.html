@@ -1,0 +1,22 @@
+<h1 mat-dialog-title>
+  Invite users
+  <button mat-dialog-close mat-icon-button>
+    <mat-icon>close</mat-icon>
+  </button>
+</h1>
+
+<mat-divider></mat-divider>
+
+<div class="session-code-wrapper">
+  <p>You session code is:</p>
+  <h1 class="session-code">{{this.code}}</h1>
+</div>
+
+<mat-divider></mat-divider>
+
+<div class="link-wrapper">
+  <a class="link" href="{{this.link}}">{{this.link}}</a>
+  <button [cdkCopyToClipboard]="this.link" class="copy-button" mat-dialog-close mat-icon-button>
+    <mat-icon>content_copy</mat-icon>
+  </button>
+</div>

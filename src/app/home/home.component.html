@@ -1,0 +1,22 @@
+<div class="input-session">
+  <img class="logo" src="../../assets/logo.gif"/>
+  <div class="input-wrapper">
+    <button
+      (click)="setNewSession()"
+      class="new-session-button"
+      mat-stroked-button>
+      New session
+      <mat-icon>favorite</mat-icon>
+    </button>
+    or
+    <mat-form-field floatLabel="never">
+      <input (blur)="checkSession()" (keydown.enter)="checkSession()" [formControl]="inputSession"
+             mask="AAAA-AAAA-AAAA" matInput
+             placeholder="Enter session code">
+      <mat-error *ngIf="inputSession.invalid">Invalid session</mat-error>
+      <mat-icon *ngIf="inputSession.value && inputSession.valid" class="enter-session-button" matSuffix>
+        music_video
+      </mat-icon>
+    </mat-form-field>
+  </div>
+</div>

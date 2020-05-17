@@ -1,6 +1,11 @@
 app-watch-later {
   .empty-list {
     text-align: center;
+
+    .add-videos {
+      color: #3698f4;
+      cursor: pointer;
+    }
   }
 
   .watch-later-list:not(:last-child) {
@@ -13,7 +18,8 @@ app-watch-later {
     height: 68px;
   }
 
-  .remove-button {
+  .action-button {
     color: #96969661;
+    margin-left: 12px;
   }
 }
