@@ -28,6 +28,13 @@ export class WatchLaterComponent implements OnInit {
     });
   }
 
+  addVideos(event): void {
+    event.preventDefault();
+    this.bottomSheetRef.dismiss({
+      action: 'add'
+    });
+  }
+
   ngOnInit(): void {
     if (this.data.duration !== 0) {
       setTimeout(() => {

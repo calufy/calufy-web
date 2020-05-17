@@ -20,23 +20,23 @@ import {ClipboardModule} from '@angular/cdk/clipboard';
 import {MatTooltipModule} from '@angular/material/tooltip';
 import {MatSnackBarModule} from '@angular/material/snack-bar';
 import {MatDialogModule} from '@angular/material/dialog';
-import {NgxPincodeModule} from 'ngx-pincode';
 import {HttpClientModule} from '@angular/common/http';
 import {MatBottomSheetModule} from '@angular/material/bottom-sheet';
 import {MatAutocompleteModule} from '@angular/material/autocomplete';
-import {EnterPinComponent} from './enter-pin/enter-pin.component';
-import {PinComponent} from './pin/pin.component';
 import {GdprComponent} from './gdpr/gdpr.component';
 import {WatchLaterComponent} from './watch-later/watch-later.component';
+import {HomeComponent} from './home/home.component';
+import {NgxMaskModule} from 'ngx-mask';
+import {ShareComponent} from './share/share.component';
 
 @NgModule({
   declarations: [
     AppComponent,
     PlayerComponent,
     GdprComponent,
-    PinComponent,
-    EnterPinComponent,
-    WatchLaterComponent
+    WatchLaterComponent,
+    HomeComponent,
+    ShareComponent
   ],
   imports: [
     BrowserModule,
@@ -56,13 +56,13 @@ import {WatchLaterComponent} from './watch-later/watch-later.component';
     MatTooltipModule,
     MatSnackBarModule,
     MatDialogModule,
-    NgxPincodeModule,
     HttpClientModule,
     MatAutocompleteModule,
     ReactiveFormsModule.withConfig({warnOnNgModelWithFormControl: 'never'}),
+    NgxMaskModule.forRoot(),
     MatBottomSheetModule
   ],
-  entryComponents: [WatchLaterComponent],
+  entryComponents: [WatchLaterComponent, ShareComponent],
   providers: [],
   bootstrap: [AppComponent]
 })
