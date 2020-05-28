@@ -4,7 +4,6 @@ import {NgModule} from '@angular/core';
 import {AppRoutingModule} from './app-routing.module';
 import {AppComponent} from './app.component';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
-import {YouTubePlayerModule} from '@angular/youtube-player';
 import {MatButtonModule} from '@angular/material/button';
 import {MatInputModule} from '@angular/material/input';
 import {MatToolbarModule} from '@angular/material/toolbar';
@@ -42,7 +41,6 @@ import {ShareComponent} from './share/share.component';
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-    YouTubePlayerModule,
     MatButtonModule,
     MatInputModule,
     MatToolbarModule,
@@ -62,9 +60,11 @@ import {ShareComponent} from './share/share.component';
     NgxMaskModule.forRoot(),
     MatBottomSheetModule
   ],
-  entryComponents: [WatchLaterComponent, ShareComponent],
+  entryComponents: [WatchLaterComponent, ShareComponent, GdprComponent],
   providers: [],
   bootstrap: [AppComponent]
 })
 export class AppModule {
+
+
 }

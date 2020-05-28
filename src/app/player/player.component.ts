@@ -17,6 +17,7 @@ import {GdprComponent} from '../gdpr/gdpr.component';
 import {SessionService} from '../session.service';
 import {ShareComponent} from '../share/share.component';
 import {MatAutocompleteTrigger} from '@angular/material/autocomplete';
+import {MatSliderChange} from '@angular/material/slider';
 
 @Component({
   selector: 'app-player',
@@ -37,17 +38,23 @@ export class PlayerComponent implements OnInit {
   public state = 2; // 1 = playing | 2 = paused
   public hideVideo = false;
 
+  public player: any;
+  public isRestricted = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  public duration = 0;
+  public sliderFormControl = new FormControl();
+  public refreshing = false;
+
   public loading;
   public link: string;
   public cinema = false;
   public videoSearchCtrl = new FormControl();
   public filteredVideoSearch: Observable<VideoSearch[]>;
   public watchLaterVideos: VideoSearch[] = [];
-  private player;
   private playing = false;
-  private currentTime = 0;
-  private refreshing = false;
+  public currentTime = 0;
   private timestamp;
+  private ready = false;
+  private firstTime = 3;
 
   constructor(
     private gdpr: MatSnackBar,
@@ -62,6 +69,52 @@ export class PlayerComponent implements OnInit {
     private bottomSheet: MatBottomSheet,
     private sessionService: SessionService) {
   }
+
+  init() {
+    if (window['YT']) {
+      this.startVideo();
+      return;
+    }
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    const firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    window['onYouTubeIframeAPIReady'] = () => this.startVideo();
+  }
+
+  startVideo() {
+    this.player = new window['YT'].Player('player', {
+      videoId: this.id,
+      playerVars: {
+        autoplay: 0,
+        modestbranding: 1,
+        controls: 1,
+        disablekb: 1,
+        rel: 0,
+        enablejsapi: 1,
+        showinfo: 0,
+        fs: 0,
+        playsinline: 1
+
+      },
+      events: {
+        'onReady': this.onPlayerReady.bind(this),
+        'onStateChange': this.onPlayerStateChange.bind(this),
+        'onError': this.onPlayerError.bind(this),
+      }
+    });
+  }
+
+  onPlayerReady(event) {
+    this.ready = true;
+    this.player.hideVideoInfo();
+    this.duration = this.player.getDuration();
+  }
+
+  onPlayerError(event) {
+    console.log('Error: ' + event.data);
+  }
+
 
   ngOnInit() {
     this.loading = true;
@@ -97,60 +150,67 @@ export class PlayerComponent implements OnInit {
     this.ref.detectChanges();
   }
 
+
   sharedVideoStateChanges(snapshot) {
     snapshot = snapshot.val();
-    if (snapshot.id && snapshot.id !== this.id) {
-      this.setId(snapshot.id);
-      this.loading = false;
+    if (this.user !== snapshot.user) {
+      this.refreshing = true;
+      setTimeout(() => {
+        this.refreshing = false;
+      }, 500);
+      if (snapshot.id && snapshot.id !== this.id) {
+        this.setId(snapshot.id);
+        this.init();
+        this.loading = false;
+        this.ref.detectChanges();
+      }
+      if (!this.ready) {
+        const checkPlayer = setInterval(() => {
+          if (this.ready) {
+            clearInterval(checkPlayer);
+            this.updatePlayerStatus(snapshot);
+          }
+        }, 100);
+      } else {
+        this.updatePlayerStatus(snapshot);
+      }
       this.ref.detectChanges();
+    }
+  }
+
+  updatePlayerStatus(snapshot) {
+    if (snapshot.user) {
+      this.lastUser = snapshot.user;
     }
     if (snapshot.timestamp) {
       this.timestamp = snapshot.timestamp;
     }
+    const currentState = this.player.getPlayerState();
+    const actualCurrentTime = this.player.getCurrentTime() ? this.player.getCurrentTime() : 0;
     if (snapshot.currentTime) {
       this.currentTime = snapshot.currentTime;
-    }
-    if (snapshot.user) {
-      this.lastUser = snapshot.user;
-    }
-    if (this.user !== snapshot.user) {
-      if (!this.player) {
-        const checkPlayer = setInterval(() => {
-          if (this.player) {
-            clearInterval(checkPlayer);
-            this.getPlayerStatus(snapshot);
-          }
-        }, 100);
-      } else {
-        this.getPlayerStatus(snapshot);
+      if (!this.between(actualCurrentTime, snapshot.currentTime - 1, snapshot.currentTime + 1)){
+        if (snapshot.state === 1) {
+          const difference = (Date.now() - this.timestamp) / 1000;
+          this.player.seekTo(snapshot.currentTime + difference);
+        } else {
+          this.player.seekTo(snapshot.currentTime);
+        }
       }
     }
-    this.ref.detectChanges();
-  }
-
-  getPlayerStatus(snapshot) {
-    if (!this.player.getCurrentTime()) {
-      this.refreshing = true;
-      this.player.seekTo(snapshot.currentTime);
-    }
-    if (this.player.getCurrentTime() &&
-      snapshot.currentTime &&
-      !this.between(this.player.getCurrentTime(), snapshot.currentTime - 1, snapshot.currentTime + 1)) {
-      this.refreshing = true;
-      const difference = (Date.now() - this.timestamp) / 1000;
-      this.player.seekTo(snapshot.currentTime - difference);
-    }
-    if (snapshot.state && this.state !== snapshot.state) {
+    if (snapshot.state) {
       switch (snapshot.state) {
         case 1:
-          this.refreshing = true;
-          this.player.playVideo();
+          if (currentState !== 1) {
+            this.player.playVideo();
+            this.playing = true;
+          }
           break;
         case 2:
-          this.refreshing = true;
           this.player.pauseVideo();
+          this.playing = false;
           break;
-        case 3:
+        case 5:
           break;
         default:
           break;
@@ -158,37 +218,31 @@ export class PlayerComponent implements OnInit {
     }
   }
 
-  setPlayerStatus() {
+  onPlayerStateChange(event) {
+    this.currentTime = this.player.getCurrentTime();
     const currentState = this.player.getPlayerState();
+    this.state = currentState;
     if (currentState === 0 && this.watchLaterVideos.length > 0) {
       this.nextVideo(this.watchLaterVideos.shift().id);
-    } else {
-      if (currentState === 1 || currentState === 2) {
-        this.state = this.player.getPlayerState();
-      }
-      this.currentTime = this.player.getCurrentTime();
-      const userRef = this.db.database.ref('sessions/' + this.session);
-      if (!this.refreshing) {
-        userRef.update({
-          id: this.id,
-          state: this.state,
-          currentTime: this.currentTime,
-          user: this.user,
-          timestamp: Date.now()
-        }).then(() => {
-          this.refreshing = false;
-        }).catch();
-      } else {
-        setTimeout(() => {
-          this.refreshing = false;
-        }, 500);
-      }
+    }
+    if (!this.refreshing && this.firstTime === 0){
+      this.storePlayerStatus();
+    }
+    if (this.firstTime > 0){
+      this.firstTime = this.firstTime - 1;
     }
   }
 
-  savePlayer(player) {
-    this.player = player.target;
-    this.player.hideVideoInfo();
+  storePlayerStatus(){
+    const userRef = this.db.database.ref('sessions/' + this.session);
+    userRef.update({
+      currentTime: this.currentTime,
+      id: this.id,
+      state: this.state,
+      timestamp: Date.now(),
+      user: this.user
+    }).then(() => {
+    }).catch();
   }
 
   toggleVideo() {
@@ -196,13 +250,15 @@ export class PlayerComponent implements OnInit {
     if (state !== 1) {
       this.player.playVideo();
       this.playing = true;
-      this.setPlayerStatus();
+      this.state = 1;
     } else {
       this.player.pauseVideo();
       this.playing = false;
-      this.setPlayerStatus();
+      this.state = 2;
     }
+    this.storePlayerStatus();
   }
+
 
   between(x, min, max): boolean {
     return x >= min && x <= max;
@@ -216,6 +272,7 @@ export class PlayerComponent implements OnInit {
     });
   }
 
+
   toggleCinema() {
     this.cinema = !this.cinema;
     this.ref.detectChanges();
@@ -227,6 +284,9 @@ export class PlayerComponent implements OnInit {
 
   setId(videoId: string) {
     this.id = videoId;
+    if (this.ready){
+      this.player.loadVideoById(videoId);
+    }
     this.videoSearchCtrl.setValue('https://www.youtube.com/watch?v=' + videoId);
     this.ref.detectChanges();
   }
