@@ -36,16 +36,21 @@
   <mat-icon>offline_bolt</mat-icon>
 </div>
 <div class="player-wrapper">
-  <youtube-player
-    (ready)="savePlayer($event)"
-    (stateChange)="setPlayerStatus()"
-    [ngClass]="{
-      'cinema': cinema,
-      'hide-video': hideVideo
-    }"
-    [videoId]="id"
-    class="player">
-  </youtube-player>
+  <div [ngClass]="{
+        'cinema': cinema,
+        'hide-video': hideVideo
+        }"
+       class="player">
+    <div id="player"></div>
+  </div>
+  <!--<div class="controls">
+    <button (click)="replay(30)" class="list-button" mat-icon-button>
+      <mat-icon>replay_30</mat-icon>
+    </button>
+    <button (click)="forward(30)" class="list-button" mat-icon-button>
+      <mat-icon>forward_30</mat-icon>
+    </button>
+  </div>-->
   <div *ngIf="hideVideo" class="video-hidden">
     <mat-icon>speaker</mat-icon>
   </div>
