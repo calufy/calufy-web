@@ -16,7 +16,7 @@ export interface VideoSearch {
 })
 export class YoutubeService {
 
-  apiKey = 'AIzaSyDUEfql1nB05gSWmjOX73gnm6It2dI1R9E'; // 'AIzaSyC6kHFaoLS3cTaIKaWwt2osvOJlbqnxuR8';
+  apiKey = 'YOUR_GOOGLE_API_KEY';
 
   constructor(public http: HttpClient, private db: AngularFireDatabase) {
   }
